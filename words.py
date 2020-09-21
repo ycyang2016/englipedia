@@ -38,4 +38,4 @@ class Verb(Word):
 
 	def __init__(self, text, grama=None):
 		super().__init__(text)
-		self.grama = grama
+		self.grammar = grammar
