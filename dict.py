@@ -40,7 +40,27 @@ class CamBridge:
 
 		#print(soup)
 
+
+class MerriamWebster:
+
+	base_url = 'https://www.merriam-webster.com/dictionary/'
+
+	def __init__(self):
+		self.prefix_url = self.base_url
+
+	def search(self, keyword):
+		target = '-'.join(word.strip() for word in keyword.split())
+		logging.info('Search the query "{}" in Merriam-Webster'.format(target))
+		soup = BeautifulSoup(download_page(self.prefix_url + target), 'html.parser')
+		return {
+			'first_known_use': soup.find('p', class_='ety-sl').text,
+			'etymology': soup.find('p', class_='et').text
+		}
+
 if __name__ == '__main__':
 	import log
 	dictionary = CamBridge('chinese-traditional')
+	dictionary.search('out of step')
+
+	dictionary = MerriamWebster()
 	dictionary.search('out of step')
