@@ -1,10 +1,9 @@
-import json
 import logging
 
 from copy import copy
 from bs4  import BeautifulSoup
-from .util import download_page, contact_sentence
-from .words import Noun, Verb
+from .util import download_page, rebuild_string
+
 
 class CamBridge:
 
@@ -26,12 +25,12 @@ class CamBridge:
 
     def extract_body(self, body):
         for def_block in body.find_all('div', class_='def-block ddef_block', recurisive=False):
-            define    = contact_sentence(text.strip() for text in def_block.find('div', class_='ddef_h').find('div', class_='def ddef_d db').find_all(text=True) if text.strip())
+            define    = rebuild_string(text.strip() for text in def_block.find('div', class_='ddef_h').find('div', class_='def ddef_d db').find_all(text=True) if text.strip())
             grammar   = def_block.find('span', class_='gc dgc')
             translate = def_block.find('div', class_='def-body ddef_b').find('span', class_='trans dtrans dtrans-se')
             examples  = []
             for example_soup in def_block.find_all('div', class_='examp dexamp'):
-                eng_example   = contact_sentence(text.strip() for text in example_soup.find('span', class_='eg deg').find_all(text=True) if text.strip())
+                eng_example   = rebuild_string(text.strip() for text in example_soup.find('span', class_='eg deg').find_all(text=True) if text.strip())
                 trans_example = example_soup.find('span', class_='trans dtrans dtrans-se hdb')
                 examples.append({
                     'text': eng_example,
@@ -69,19 +68,21 @@ class CamBridge:
             word_body = word_soup.find('div', class_='pos-body')
 
             word = self.extract_head(word_head)
+            word['defines'] = []
             for body in self.extract_body(word_body):
-                new_word = copy(word)
-                new_word.update(body)
-                print(json.dumps(new_word, ensure_ascii=False, indent=2))
+                if body.pop('type') == 'define':
+                    body['phrases'] = []
+                    word['defines'].append(body)
+                else:
+                    word['defines'][-1]['phrases'].append(body)
 
-            yield {}
+            yield word
 
     def search(self, keyword):
         target = '-'.join(word.strip() for word in keyword.split())
         soup   = BeautifulSoup(download_page(self.prefix_url + target), 'html.parser')
-        for word_soup in self.find_word(soup):
-            pass
         logging.info('Search the query "{}" in CamBridge'.format(target))
+        return list(self.find_word(soup))
 
 class MerriamWebster:
 
@@ -95,6 +96,6 @@ class MerriamWebster:
         logging.info('Search the query "{}" in Merriam-Webster'.format(target))
         soup = BeautifulSoup(download_page(self.prefix_url + target), 'html.parser')
         return {
-            'first_known_use': contact_sentence(text.strip() for text in soup.find('p', class_='ety-sl').text.split()),
-            'etymology': contact_sentence(text.strip() for text in soup.find('p', class_='et').text.split())
+            'first_known_use': rebuild_string(text.strip() for text in soup.find('p', class_='ety-sl').text.split()),
+            'etymology': rebuild_string(text.strip() for text in soup.find('p', class_='et').text.split())
         }

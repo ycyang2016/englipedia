@@ -9,7 +9,7 @@ def download_page(url):
     data = requests.get(url, headers=headers).content
     return data
 
-def contact_sentence(strings):
+def rebuild_string(strings):
 	parser = re.compile(r'^[\w ]*$')
 	result = ''
 	for string in strings:
