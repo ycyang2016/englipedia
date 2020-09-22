@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  yc-jupyter:
+    build:
+      context: ./image
+      dockerfile: dockerfile
+    image: ycyang/jupyter
+    container_name: yc-jupyter
+    restart: always
+    user: 1000:100
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1g"
+    environment:
+      TZ: "Asia/Taipei"
+      LANG: C.UTF-8
+    volumes:
+      - ./src:/home/jovyan/lib
+    ports:
+      - 8888:8888

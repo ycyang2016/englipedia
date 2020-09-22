@@ -1,0 +1,7 @@
+FROM jupyter/base-notebook
+
+COPY ./requirements.txt .
+COPY ./jupyter_notebook_config.py /etc/jupyter/
+RUN pip install --no-cache-dir -r requirements.txt
+
+RUN rm ./requirements.txt

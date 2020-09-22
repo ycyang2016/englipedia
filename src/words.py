@@ -15,12 +15,12 @@ class Word:
 
 	def __init__(self, text):
 		self.text = text
-		self.define = {}
+		self.define = []
 		self.examples = []
 		self.phrases  = []
 
-	def add_define(self, language, define):
-		self.define[language] = define
+	def add_define(self, **define):
+		self.define.append(define)
 
 	def add_example(self, example):
 		self.examples.append(example)
