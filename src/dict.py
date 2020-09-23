@@ -99,3 +99,22 @@ class MerriamWebster:
             'first_known_use': rebuild_string(text.strip() for text in soup.find('p', class_='ety-sl').text.split()),
             'etymology': rebuild_string(text.strip() for text in soup.find('p', class_='et').text.split())
         }
+
+class OnlineEtymology:
+
+    base_url = 'https://www.etymonline.com/word/'
+
+    def __init__(self):
+        self.prefix_url = self.base_url
+
+    def search(self, keyword):
+        target = '-'.join(word.strip() for word in keyword.split())
+        logging.info('Search the query "{}" in OnlineEtymology'.format(target))
+        soup = BeautifulSoup(download_page(self.prefix_url + target), 'html.parser')
+        word_label = soup.find('section', class_='word__defination--2q7ZH')
+        chart_label = soup.find('div', class_='chart')
+
+        return {
+            'text': word_label.text if word_label else None,
+            'image_url': chart_label.get('data-origin-path') if chart_label else None
+        }
