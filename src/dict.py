@@ -15,7 +15,7 @@ class CamBridge:
     def extract_head(self, head):
         word = {
             'text': head.find('span', class_='hw dhw').text,
-            'pos' : head.find('span', class_='pos dpos').text
+            'pos' : head.find('span', class_='pos dpos').text if head.find('span', class_='pos dpos') else None
         }
 
         if word['pos'] == 'verb':
@@ -48,7 +48,8 @@ class CamBridge:
                         'text': translate.text
                     }
                 },
-                'examples': examples
+                'examples': examples,
+                'phrases': []
             }
 
             if grammar:
@@ -59,7 +60,7 @@ class CamBridge:
                 body_data['phrase'] = def_block.find_parent().previous_sibling.find('span', class_='phrase-title dphrase-title').text.strip()
             else:
                 body_data['type'] = 'define'
-                 
+            
             yield body_data
 
     def find_word(self, soup):
@@ -71,9 +72,10 @@ class CamBridge:
             word['defines'] = []
             for body in self.extract_body(word_body):
                 if body.pop('type') == 'define':
-                    body['phrases'] = []
                     word['defines'].append(body)
                 else:
+                    if not len(word['defines']):
+                        word['defines'].append(body)
                     word['defines'][-1]['phrases'].append(body)
 
             yield word
@@ -96,8 +98,8 @@ class MerriamWebster:
         logging.info('Search the query "{}" in Merriam-Webster'.format(target))
         soup = BeautifulSoup(download_page(self.prefix_url + target), 'html.parser')
         return {
-            'first_known_use': rebuild_string(text.strip() for text in soup.find('p', class_='ety-sl').text.split()),
-            'etymology': rebuild_string(text.strip() for text in soup.find('p', class_='et').text.split())
+            'first_known_use': rebuild_string(text.strip() for text in soup.find('p', class_='ety-sl').text.split()) if soup.find('p', class_='ety-sl') else None,
+            'etymology': rebuild_string(text.strip() for text in soup.find('p', class_='et').text.split()) if soup.find('p', class_='et') else None
         }
 
 class OnlineEtymology:

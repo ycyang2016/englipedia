@@ -10,26 +10,28 @@ class UI:
 
     def __init__(self):
         self.setting = self.create_settings()
-        self.keyword = Text(value='', placeholder='Input Keyword', description='', disabled=False, layout=Layout(width='75%'))
-        self.search  = self.create_button('search')
+        self.keyword = Text(value='', placeholder='Search dictionary and press enter', description='', disabled=False, layout=Layout(width='75%'))
+        #self.search  = self.create_button('search')
         self.out     = Output()
         self.result  = {}
         self.engine  = {
-            'cambridge': CamBridge('chinese-traditional'),
-            'merriam': MerriamWebster(),
-            'etymology': OnlineEtymology()
+            'Cambridge': CamBridge('chinese-traditional'),
+            'Merriam': MerriamWebster(),
+            'Etymology': OnlineEtymology()
         }
+
+        self.keyword.on_submit(self.search)
 
     def get_config(self):
         return {
             'dictionary': [dict_name.description for dict_name in self.setting[1, 1].children if dict_name.value],
             'fields': {
-                'cambridge': {
+                'Cambridge': {
                     'word'  : {dict_name.description: dict_name.value for dict_name in self.setting[3, 1].children},
                     'phrase': {dict_name.description: dict_name.value for dict_name in self.setting[4, 1].children}
                 },
-                'merriam': {dict_name.description: dict_name.value for dict_name in self.setting[5, 1].children},
-                'etymology': {dict_name.description: dict_name.value for dict_name in self.setting[6, 1].children},
+                'Merriam': {dict_name.description: dict_name.value for dict_name in self.setting[5, 1].children},
+                'Etymology': {dict_name.description: dict_name.value for dict_name in self.setting[6, 1].children},
                 'translate': {dict_name.description: dict_name.value for dict_name in self.setting[7, 1].children}
             }
         }
@@ -39,11 +41,11 @@ class UI:
             return
         self.out.clear_output()
         fields = self.get_config()['fields']
-        word_field = fields['cambridge']['word']
-        phrase_field = fields['cambridge']['phrase']
+        word_field = fields['Cambridge']['word']
+        phrase_field = fields['Cambridge']['phrase']
         translate = fields['translate']['requirment']
         with self.out:
-            for word in self.result['cambridge']:
+            for word in self.result.get('Cambridge', []):
                 print(word['text'], end='')
                 if word_field['pos']:
                     print('', '(part-of-speech: {})'.format(word['pos']), end='')
@@ -77,31 +79,38 @@ class UI:
                                                 print('', '({})'.format(example['translate']['text']), end='')
                                             print()
                 print()
-            merriam_field = fields['merriam']
-            if merriam_field['first use'] or merriam_field['etymology']:
+
+            merriam_field = fields['Merriam']
+            if self.result.get('Merriam') and (merriam_field['first use'] or merriam_field['etymology']):
                 print('In Merriam webster:')
                 if merriam_field['first use']:
                     print('    First known use:')
-                    print('       ', self.result['merriam']['first_known_use'])
+                    data = self.result['Merriam']['first_known_use']
+                    print('       ', data if data else 'No data')
                 if merriam_field['etymology']:
                     print('    Etymology:')
-                    print('       ', self.result['merriam']['etymology'])
+                    data = self.result['Merriam']['etymology']
+                    print('       ', data if data else 'No data')
 
-            etymology_field = fields['etymology']
-            if etymology_field['description'] or etymology_field['image(if any)']:
+            etymology_field = fields['Etymology']
+            if self.result.get('Etymology') and (etymology_field['description'] or etymology_field['image(if any)']):
                 print('In etymology online:')
                 if etymology_field['description']:
                     print('    Description:')
-                    print('       ', self.result['etymology']['text'])
-                if etymology_field['image(if any)'] and self.result['etymology']['image_url']:
-                    display(Image(requests.get(self.result['etymology']['image_url']).content))
+                    data = self.result['Etymology']['text']
+                    print('       ', data if data else 'No data')
+                if etymology_field['image(if any)'] and self.result['Etymology']['image_url']:
+                    display(Image(requests.get(self.result['Etymology']['image_url']).content))
 
     def search(self, event):
         self.out.clear_output()
+        dict_names = self.get_config()['dictionary']
         if self.keyword.value:
             self.result = {}
-            for dict_name, search_engine in self.engine.items():
-                self.result[dict_name] = search_engine.search(self.keyword.value)
+            with self.out:
+                for dict_name in dict_names:
+                    print('search {}...'.format(dict_name))
+                    self.result[dict_name] = self.engine[dict_name].search(self.keyword.value)
             self.show_result()
         else:
             with self.out:
@@ -145,7 +154,7 @@ class UI:
 
     def run(self):
         display(self.keyword)
-        display(self.search)
+        #display(self.search)
         display(self.setting)
         display(self.out)
 
