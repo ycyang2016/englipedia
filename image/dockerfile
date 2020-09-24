@@ -2,6 +2,8 @@ FROM jupyter/base-notebook
 
 COPY ./requirements.txt .
 COPY ./jupyter_notebook_config.py /etc/jupyter/
+COPY ./custom.css /home/jovyan/.jupyter/custom/
 RUN pip install --no-cache-dir -r requirements.txt
+RUN jupyter nbextension enable --py widgetsnbextension
 
 RUN rm ./requirements.txt
