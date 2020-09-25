@@ -93,13 +93,44 @@ class MerriamWebster:
     def __init__(self):
         self.prefix_url = self.base_url
 
+    def extract_body(self, soup, div_id, text_class):
+        data_list = []
+        anchor = soup.find('div', id=div_id)
+        func_labels = anchor.find_all('p', class_='function-label')
+        func_label_list = [] 
+        if func_labels:
+            for func_label in func_labels:
+                sub_func_labels = func_label.findChildren('p', class_='function-label')
+                for sub_func_label in sub_func_labels:
+                    sub_func_label.extract()
+                func_label_list.append(func_label)
+
+            for func_label in func_label_list:
+                text = func_label.find('p', class_=text_class).text
+                type = func_label.text.replace(text, '').replace(' ', '')
+                data_list.append(
+                    {
+                        'type': type,
+                        'text': rebuild_string(text.strip() for text in text.split())
+                    }
+                )
+        else:
+            data_list.append(
+                {
+                    'type': None,
+                    'text': rebuild_string(text.strip() for text in anchor.find('p', class_=text_class).text.split())
+                }
+            )    
+
+        return data_list
+
     def search(self, keyword):
         target = '-'.join(word.strip() for word in keyword.split())
         logging.info('Search the query "{}" in Merriam-Webster'.format(target))
         soup = BeautifulSoup(download_page(self.prefix_url + target), 'html.parser')
         return {
-            'first_known_use': rebuild_string(text.strip() for text in soup.find('p', class_='ety-sl').text.split()) if soup.find('p', class_='ety-sl') else None,
-            'etymology': rebuild_string(text.strip() for text in soup.find('p', class_='et').text.split()) if soup.find('p', class_='et') else None
+            'first_known_use': self.extract_body(soup, div_id='first-known-anchor', text_class='ety-sl'),
+            'etymology': self.extract_body(soup, div_id='etymology-anchor', text_class='et')
         }
 
 class OnlineEtymology:
