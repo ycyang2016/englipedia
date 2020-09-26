@@ -18,3 +18,6 @@ def rebuild_string(strings):
 		else:
 			result = result.strip() + string + ' '
 	return result.strip()
+
+def myprint(string='', head=0, end=''):
+	print(' ' * head + string, end=end)
