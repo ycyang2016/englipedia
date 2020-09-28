@@ -11,7 +11,7 @@ def download_page(url):
     return data
 
 def rebuild_string(strings):
-	parser = re.compile(r'^[\w ]*$')
+	parser = re.compile(r'[\w ]+')
 	result = ''
 	for string in strings:
 		if parser.match(string):
