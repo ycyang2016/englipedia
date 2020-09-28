@@ -1,4 +1,5 @@
 import re
+import sys
 import requests
 
 
@@ -19,5 +20,5 @@ def rebuild_string(strings):
 			result = result.strip() + string + ' '
 	return result.strip()
 
-def myprint(string='', head=0, end=''):
-	print(' ' * head + string, end=end)
+def myprint(string='', head=0, end='', file=sys.stdout):
+	print(' ' * head + string, end=end, file=file)
