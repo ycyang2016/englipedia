@@ -11,6 +11,7 @@ class CamBridge:
     base_url = 'https://dictionary.cambridge.org/dictionary/'
 
     def __init__(self, language):
+        self.language  = language
         self.prefix_url = self.base_url + ('english-{language}/'.format(language=language.strip()) if language else 'english/')
 
     def extract_head(self, head):
@@ -28,11 +29,11 @@ class CamBridge:
         for def_block in body.find_all('div', class_='def-block ddef_block', recurisive=False):
             define    = rebuild_string(text.strip() for text in def_block.find('div', class_='ddef_h').find('div', class_='def ddef_d db').find_all(text=True) if text.strip())
             grammar   = def_block.find_all('span', class_='gc dgc')
-            translate = def_block.find('div', class_='def-body ddef_b').find('span', class_='trans dtrans dtrans-se')
+            translate = def_block.find('div', class_='def-body ddef_b').find('span', class_='trans dtrans dtrans-se') if self.language else None
             examples  = []
             for example_soup in def_block.find_all('div', class_='examp dexamp'):
                 eng_example   = rebuild_string(text.strip() for text in example_soup.find('span', class_='eg deg').find_all(text=True) if text.strip())
-                trans_example = example_soup.find('span', class_='trans dtrans dtrans-se hdb')
+                trans_example = example_soup.find('span', class_='trans dtrans dtrans-se hdb') if self.language else None
                 examples.append({
                     'text': eng_example,
                     'translate': trans_example.text if trans_example else '無翻譯'

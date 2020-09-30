@@ -16,7 +16,7 @@ class UI:
         self.search_button  = self.create_button('search')
         self.save_button  = self.create_button('save file')
         self.out     = Output()
-        self.results = []
+        self.results = {}
 
         self.search_button.on_click(self.search)
         self.save_button.on_click(self.save_file)
@@ -54,67 +54,69 @@ class UI:
         phrase_field = fields['Cambridge']['phrase']
         translate = fields['translate']['requirment']
         with self.out:
-            for result in self.results:
+            for keyword, result in self.results.items():
+                myprint(keyword + ':', end='\n', file=file)
+                myprint('*' * 10, end='\n', file=file)
                 for word in result.get('Cambridge', []):
-                    myprint(word['text'], file=file)
+                    myprint(word['text'], head=4, file=file)
                     myprint('(part-of-speech: {})'.format(word['pos']) if word_field['pos'] else '', end='\n', file=file)
 
                     defines = word['defines'] if word_field['define'] else []
                     for idx, define in enumerate(defines):
                         grammar = define.get('grammar', word.get('grammar', None))
-                        myprint('define {}: {}'.format(idx, define['define']['text']), head=4, file=file)
+                        myprint('define {}: {}'.format(idx, define['define']['text']), head=8, file=file)
                         myprint('({})'.format(define['define']['translate']) if translate and define['define']['text'] else '', head=1, file=file)
                         myprint('[{}]'.format(grammar) if word_field['grammar'] else '', end='\n', head=1, file=file)
 
                         examples = define['examples'] if word_field['examples'] else []
                         for ex_idx, example in enumerate(examples):
-                            myprint('- example {}: {}'.format(ex_idx, example['text']), head=8, file=file)
+                            myprint('- example {}: {}'.format(ex_idx, example['text']), head=12, file=file)
                             myprint('({})'.format(example['translate']) if translate and example['text'] else '', end='\n', head=1, file=file)
 
                         phrases = define['phrases'] if phrase_field['text'] else []
                         for ph_idx, phrase in enumerate(phrases):
-                            myprint('* phrase {}: {}'.format(ph_idx, phrase['phrase']), head=8, end='\n', file=file)
-                            myprint('define: {}'.format(phrase['define']['text'] if phrase_field['define'] else ''), head=12, file=file)
+                            myprint('* phrase {}: {}'.format(ph_idx, phrase['phrase']), head=12, end='\n', file=file)
+                            myprint('define: {}'.format(phrase['define']['text'] if phrase_field['define'] else ''), head=16, file=file)
                             myprint('({})'.format(phrase['define']['translate']) if translate and phrase_field['define'] else '', end='\n', head=1, file=file)
 
                             examples = phrase['examples'] if phrase_field['examples'] else []
                             for ex_idx, example in enumerate(examples):
-                                myprint('- example {}: {}'.format(ex_idx, example['text']), head=16, file=file)
+                                myprint('- example {}: {}'.format(ex_idx, example['text']), head=20, file=file)
                                 myprint('({})'.format(example['translate'] if translate and example['text'] else ''), end='\n', head=1, file=file)
                     myprint(end='\n', file=file)
 
                 merriam_field = fields['Merriam']
                 if result.get('Merriam') and (merriam_field['first use'] or merriam_field['etymology']):
-                    myprint('In Merriam webster:', end='\n', file=file)
+                    myprint('In Merriam webster:', end='\n', head=4, file=file)
                     if merriam_field['first use']:
-                        myprint('First known use:', head=4, end='\n', file=file)
+                        myprint('First known use:', head=8, end='\n', file=file)
                         self.print_merriam(result['Merriam']['first_known_use'], file=file)
 
                     if merriam_field['etymology']:
-                        myprint('Etymology:', head=4, end='\n', file=file)
+                        myprint('Etymology:', head=8, end='\n', file=file)
                         self.print_merriam(result['Merriam']['etymology'], file=file)
 
                 etymology_field = fields['Etymology']
                 if result.get('Etymology') and (etymology_field['description'] or etymology_field['image(if any)']):
-                    myprint('In etymology online:', end='\n', file=file)
+                    myprint('In etymology online:', end='\n', head=4, file=file)
                     if etymology_field['description']:
-                        myprint('Description:', head=4, end='\n', file=file)
+                        myprint('Description:', head=8, end='\n', file=file)
                         data = result['Etymology']['text']
-                        myprint(data if data else 'No data', head=8, end='\n', file=file)
+                        myprint(data if data else 'No data', head=12, end='\n', file=file)
                     if etymology_field['image(if any)'] and result['Etymology']['image_url']:
                         display(Image(requests.get(result['Etymology']['image_url']).content))
                         myprint(end='\n', file=file)
-                myprint('=========================', end='\n', file=file)
+                myprint('=' * 75, end='\n', file=file)
 
     def print_merriam(self, data, file=sys.stdout):
         if data:
             for d in data:
                 if d['type']:
-                    myprint('part-of-speech: {}'.format(d['type']), head=8, end='\n', file=file)
-                myprint(d['text'], head=8, end='\n', file=file)
+                    myprint('part-of-speech: {}'.format(d['type']), head=12, end='\n', file=file)
+                myprint(d['text'], head=12, end='\n', file=file)
                 myprint(file=file)
         else:
-            myprint(data if data else 'No data', head=4, end='\n', file=file)
+            myprint(data if data else 'No data', head=8, end='\n', file=file)
 
     def search(self, event):
         self.out.clear_output()
@@ -126,11 +128,11 @@ class UI:
             'Etymology': OnlineEtymology()
         }
         if self.keyword.value:
-            self.results = []
+            self.results = {}
             with self.out:
                 for keyword in self.keyword.value.split('\n'):
                     print('search {}...'.format(keyword))
-                    self.results.append({dict_name : engine[dict_name].search(keyword.strip()) for dict_name in dict_names})
+                    self.results[keyword] = {dict_name : engine[dict_name].search(keyword.strip()) for dict_name in dict_names}
                 self.show_result()
         else:
             with self.out:
